@@ -13,10 +13,6 @@ import java.nio.*;
 import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class WebServer {
 
@@ -33,7 +29,10 @@ public class WebServer {
     public void start() throws IOException {
         // create a server socket 
         ServerSocket serverSock = new ServerSocket(port);
-        System.out.println("Server socket created.");
+        System.out.println("Server socket created. Port open: " + port);
+        // The java URL connection to the resource
+        URL url = new URL("http://localhost:1091/public/test");
+        System.out.println("\n* URL: " + url);
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
@@ -49,18 +48,21 @@ public class WebServer {
                 while (!(inputLine = in.readLine()).equals("")) {
                     System.out.println(inputLine);
                     if (inputLine.contains("PUT")) {
-                        System.out.println("HTTP/1.1 200 OK");
-                        try {
-                            RequestMessage reqMsg = RequestMessage.parse(conn.getInputStream());
-                        } catch (MessageFormatException ex) {
-                            System.out.println("HTTP/1.1 400 Bad Request");
-                        }
+                        RequestMessage reqMsg = new RequestMessage("PUT", "");
+                        // get uri
+                        reqMsg.getURI();
+                        // convert to path
+                        // does path to file exist?
+                            // yes - does file exist?
+                            // no - create file at location
+                        // no - response message
                     } else if (inputLine.contains("GET")) {
-                        System.out.println("GET request received!");
+                        // write to output, file at (path)
+                        // response message
                     }
                 }
             }
-            //conn.close();
+            conn.close();
         }
     }
 
