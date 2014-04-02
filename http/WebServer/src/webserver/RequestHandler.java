@@ -59,7 +59,7 @@ public class RequestHandler extends Thread {
             } catch (MessageFormatException mfe) {
                 System.out.println("MFE - RequestHandler.java");
             }
-            //conn.close();
+            conn.close();
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in handleREquests");
         }
@@ -87,8 +87,15 @@ public class RequestHandler extends Thread {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         try {
+            OutputStream fis = Files.newOutputStream(path);
             Files.createFile(path);
-            OutputStream fos = Files.newOutputStream(path);
+            while (true) {
+                int b = is.read();
+                if (b == - 1)
+                    break;
+                fis.write(b);
+            }
+            fis.close();
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in PUT");
         }
