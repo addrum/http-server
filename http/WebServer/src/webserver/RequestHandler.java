@@ -41,7 +41,6 @@ public class RequestHandler extends Thread {
         try {
             os = conn.getOutputStream();
             is = conn.getInputStream();
-            os.write(("Server is running.\r\n").getBytes());
             try {
                 RequestMessage reqMsg = RequestMessage.parse(is);
                 uri = reqMsg.getURI();
@@ -87,13 +86,11 @@ public class RequestHandler extends Thread {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         try {
-            OutputStream fos = Files.newOutputStream(path);
             Files.createFile(path);
+            OutputStream fos = Files.newOutputStream(path);
             while (true) {
                 int b = is.read();
-                if (b == -1) {
-                    break;
-                }
+                if (b == -1) break;
                 fos.write(b);
             }
             fos.close();
