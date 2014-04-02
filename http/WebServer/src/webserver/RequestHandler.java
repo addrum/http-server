@@ -14,6 +14,7 @@ import java.nio.file.*;
 import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +31,7 @@ public class RequestHandler extends Thread {
     public RequestHandler(Socket conn) {
         thread = new Thread();
         this.conn = conn;
-        serverLocation = ".\\data\\public\\";
+        serverLocation = "."+File.separator+"data"+File.separator+"public"+File.separator;
         handleRequests();
     }
 
@@ -67,6 +68,7 @@ public class RequestHandler extends Thread {
     public void GET(String uri, OutputStream os) {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
+        System.out.println(path.toString());
         try {
             InputStream fis = Files.newInputStream(path);
             while (true) {
