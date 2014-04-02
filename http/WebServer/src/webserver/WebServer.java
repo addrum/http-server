@@ -31,51 +31,13 @@ public class WebServer {
         ServerSocket serverSock = new ServerSocket(port);
         System.out.println("Server socket created. Port open: " + port);
         // The java URL connection to the resource
-        URL url = new URL("http://localhost:1091/public/test");
+        URL url = new URL("http://localhost:1091");
         System.out.println("\n* URL: " + url);
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
-            System.out.println("Connection accepted.");
-            // get the output stream for sending data to the client 
-            OutputStream os = conn.getOutputStream();
-            InputStream is = conn.getInputStream();
-            os.write("Server is running.".getBytes());
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                String inputLine;
-                while (!(inputLine = in.readLine()).equals("")) {
-                    System.out.println(inputLine);
-                    if (inputLine.contains("PUT")) {
-                        RequestMessage reqMsg = new RequestMessage("PUT", "");
-                        // get uri
-                        reqMsg.getURI();
-                        // convert to path
-                        // does path to file exist?
-                            // yes - does file exist?
-                            // no - create file at location
-                        // no - response message
-                    } else if (inputLine.contains("GET")) {
-                        String[] requestParam = inputLine.split(" ");
-                        String path = requestParam[1];
-                        try (PrintWriter out = new PrintWriter(conn.getOutputStream(), true)) {
-                            File file = new File(path);
-                            if (!file.exists()) {
-                                ResponseMessage respMsg = new ResponseMessage(404);
-                                respMsg.write(os);
-                            }
-                            FileReader fr = new FileReader(file);
-                            try (BufferedReader bfr = new BufferedReader(fr)) {
-                                String line;
-                                while ((line = bfr.readLine()) != null) {
-                                    out.write(line);
-                                }
-                            }
-                            is.close();
-                        }
-                    }
-                }
-            }
-            conn.close();
+            RequestHandler client = new RequestHandler(conn);
+            System.out.println("Connection accepted.");           
         }
     }
 
