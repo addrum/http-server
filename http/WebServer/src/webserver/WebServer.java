@@ -36,8 +36,8 @@ public class WebServer {
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
-            RequestHandler client = new RequestHandler(conn);
-            System.out.println("Connection accepted.");           
+            System.out.println("Connection accepted."); 
+            RequestHandler client = new RequestHandler(conn);     
         }
     }
 

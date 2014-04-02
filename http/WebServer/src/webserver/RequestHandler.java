@@ -25,10 +25,13 @@ public class RequestHandler extends Thread {
     private OutputStream os;
     private Thread thread;
     private Path path;
+    private String serverLocation;
+    private String uri;
 
     public RequestHandler(Socket conn) {
         thread = new Thread();
         this.conn = conn;
+        serverLocation = "."+File.separator+"data"+File.separator+"public"+File.separator;
         handleRequests();
     }
 
@@ -41,10 +44,14 @@ public class RequestHandler extends Thread {
             os.write(("Server is running.\r\n").getBytes());
             try {
                 RequestMessage reqMsg = RequestMessage.parse(is);
+                uri = reqMsg.getURI();
                 if (reqMsg.getMethod().equals("GET")) {
-                    GET(reqMsg.getURI(), os);
+                    GET(uri, os);
                     ResponseMessage resMsg = new ResponseMessage(200);
                     os.write(("\r\n" + resMsg.toString()).getBytes());
+                } else if (reqMsg.getMethod().equals("PUT")) {
+                    PUT(uri, is);
+                    ResponseMessage resMsg = new ResponseMessage(201);
                 } else {
                     ResponseMessage resMsg = new ResponseMessage(400);
                     os.write(("\r\n" + resMsg.toString()).getBytes());
@@ -59,7 +66,7 @@ public class RequestHandler extends Thread {
     }
 
     public void GET(String uri, OutputStream os) {
-        path = Paths.get("./public/", uri);
+        path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         System.out.println(path.toString());
         try {
@@ -70,9 +77,20 @@ public class RequestHandler extends Thread {
                     break;
                 }
                 os.write(b);
-            }           
+            }
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in GET");
+        }
+    }
+
+    public void PUT(String uri, InputStream is) {
+        path = Paths.get(serverLocation, uri);
+        path.toAbsolutePath();
+        try {
+            File newFile = new File(uri);
+            newFile.createNewFile();
+        } catch (IOException ioe) {
+            System.out.println("IOE - RequestHandler.java in PUT");
         }
     }
 
