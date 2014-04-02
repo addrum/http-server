@@ -59,7 +59,7 @@ public class WebServer {
                         String path = requestParam[1];
                         PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
                         File file = new File(path);
-                        if (!file.exist()) {
+                        if (!file.exists()) {
                             ResponseMessage respMsg = new ResponseMessage(404);
                             respMsg.write(os);
                         }
