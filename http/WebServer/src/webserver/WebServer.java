@@ -29,20 +29,23 @@ public class WebServer {
     public void start() throws IOException {
         // create a server socket 
         ServerSocket serverSock = new ServerSocket(port);
+        System.out.println("Server socket created.");
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
+            System.out.println("Connection accepted.");
             // get the output stream for sending data to the client 
             OutputStream os = conn.getOutputStream();
             // send a response 
             ResponseMessage msg = new ResponseMessage(200);
             msg.write(os);
             os.write("Server is running.".getBytes());
-
-            conn.close();
-            
-            // get the input stream for receiving data from the client
-            InputStream is = conn.getInputStream();
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String inputLine;
+                while (!(inputLine = in.readLine()).equals("")) {
+                    System.out.println(inputLine);
+                }
+            }
         }
 
     }
