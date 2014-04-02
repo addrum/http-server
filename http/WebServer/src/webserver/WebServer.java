@@ -57,8 +57,12 @@ public class WebServer {
                             // no - create file at location
                         // no - response message
                     } else if (inputLine.contains("GET")) {
-                        // write to output, file at (path)
-                        // response message
+                        // get uri
+                        // convert to path
+                        // does path to file exist?
+                            // yes - return file to client
+                            // no - reponse message
+                        // mo - response message
                     }
                 }
             }
