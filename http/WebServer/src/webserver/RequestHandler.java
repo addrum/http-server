@@ -14,6 +14,7 @@ import java.nio.file.*;
 import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,8 +59,9 @@ public class RequestHandler extends Thread {
     }
 
     public void GET(String uri, OutputStream os) {
-        path = Paths.get("C:\\Users\\Adam\\Dropbox\\Education\\University\\Networks and Operating Systems\\server", uri);
+        path = Paths.get("./public/", uri);
         path.toAbsolutePath();
+        System.out.println(path.toString());
         try {
             InputStream fis = Files.newInputStream(path);
             while (true) {
