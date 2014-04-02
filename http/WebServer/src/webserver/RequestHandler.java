@@ -49,7 +49,7 @@ public class RequestHandler extends Thread {
                     ResponseMessage resMsg = new ResponseMessage(200);
                     os.write(("\r\n" + resMsg.toString()).getBytes());
                 } else if (reqMsg.getMethod().equals("PUT")) {
-                    PUT(uri, is);
+                    PUT(uri, is, os);
                     ResponseMessage resMsg = new ResponseMessage(201);
                 } else {
                     ResponseMessage resMsg = new ResponseMessage(400);
@@ -81,12 +81,12 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void PUT(String uri, InputStream is) {
+    public void PUT(String uri, InputStream is, OutputStream os) {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         try {
-            File newFile = new File(uri);
-            newFile.createNewFile();
+            Files.createFile(path);
+            OutputStream fos = Files.newOutputStream(path);
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in PUT");
         }
