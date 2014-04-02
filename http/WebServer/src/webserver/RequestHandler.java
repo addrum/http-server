@@ -31,7 +31,7 @@ public class RequestHandler extends Thread {
     public RequestHandler(Socket conn) {
         thread = new Thread();
         this.conn = conn;
-        serverLocation = "."+File.separator+"data"+File.separator+"public"+File.separator;
+        serverLocation = "." + File.separator + "data" + File.separator + "public" + File.separator;
         handleRequests();
     }
 
@@ -50,7 +50,7 @@ public class RequestHandler extends Thread {
                     ResponseMessage resMsg = new ResponseMessage(200);
                     os.write(("\r\n" + resMsg.toString()).getBytes());
                 } else if (reqMsg.getMethod().equals("PUT")) {
-                    PUT(uri, is, os);
+                    PUT(uri, is);
                     ResponseMessage resMsg = new ResponseMessage(201);
                 } else {
                     ResponseMessage resMsg = new ResponseMessage(400);
@@ -59,7 +59,7 @@ public class RequestHandler extends Thread {
             } catch (MessageFormatException mfe) {
                 System.out.println("MFE - RequestHandler.java");
             }
-            conn.close();
+            //conn.close();
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in handleREquests");
         }
@@ -73,7 +73,7 @@ public class RequestHandler extends Thread {
             InputStream fis = Files.newInputStream(path);
             while (true) {
                 int b = fis.read();
-                if (b == - 1) {
+                if (b == -1) {
                     break;
                 }
                 os.write(b);
@@ -83,19 +83,20 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void PUT(String uri, InputStream is, OutputStream os) {
+    public void PUT(String uri, InputStream is) {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         try {
-            OutputStream fis = Files.newOutputStream(path);
+            OutputStream fos = Files.newOutputStream(path);
             Files.createFile(path);
             while (true) {
                 int b = is.read();
-                if (b == - 1)
+                if (b == -1) {
                     break;
-                fis.write(b);
+                }
+                fos.write(b);
             }
-            fis.close();
+            fos.close();
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in PUT");
         }
