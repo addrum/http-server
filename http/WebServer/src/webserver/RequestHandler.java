@@ -21,15 +21,16 @@ public class RequestHandler extends Thread {
     private Socket conn;
     private InputStream is;
     private OutputStream os;
+    private Thread thread;
 
     public RequestHandler(Socket conn) {
-        Thread thread = new Thread();
-        thread.start();
+        thread = new Thread();        
         this.conn = conn;
         handleRequests();
     }
 
     public void handleRequests() {
+        thread.start();
         // get the output stream for sending data to the client 
         try {
             os = conn.getOutputStream();
