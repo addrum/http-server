@@ -13,6 +13,10 @@ import java.nio.*;
 import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class WebServer {
 
@@ -37,17 +41,27 @@ public class WebServer {
             // get the output stream for sending data to the client 
             OutputStream os = conn.getOutputStream();
             // send a response 
-            ResponseMessage msg = new ResponseMessage(200);
-            msg.write(os);
+            ResponseMessage respMsg = new ResponseMessage(200);
+            respMsg.write(os);
             os.write("Server is running.".getBytes());
             try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String inputLine;
                 while (!(inputLine = in.readLine()).equals("")) {
                     System.out.println(inputLine);
+                    if (inputLine.contains("PUT")) {
+                        System.out.println("HTTP/1.1 200 OK");
+                        try {
+                            RequestMessage reqMsg = RequestMessage.parse(conn.getInputStream());
+                        } catch (MessageFormatException ex) {
+                            System.out.println("HTTP/1.1 400 Bad Request");
+                        }
+                    } else if (inputLine.contains("GET")) {
+                        System.out.println("GET request received!");
+                    }
                 }
             }
+            //conn.close();
         }
-
     }
 
     public static void main(String[] args) throws IOException {
