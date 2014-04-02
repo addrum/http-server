@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.*;
+import java.nio.file.*;
 import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
@@ -22,9 +23,10 @@ public class RequestHandler extends Thread {
     private InputStream is;
     private OutputStream os;
     private Thread thread;
+    private Path path;
 
     public RequestHandler(Socket conn) {
-        thread = new Thread();        
+        thread = new Thread();
         this.conn = conn;
         handleRequests();
     }
@@ -35,45 +37,40 @@ public class RequestHandler extends Thread {
         try {
             os = conn.getOutputStream();
             is = conn.getInputStream();
-            os.write("Server is running.".getBytes());
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-                String inputLine;
-                while (!(inputLine = in.readLine()).equals("")) {
-                    System.out.println(inputLine);
-                    if (inputLine.contains("PUT")) {
-                    // get uri
-                        // convert to path
-                        // does path to file exist?
-                        // yes - does file exist?
-                        // no - create file at location
-                        // no - response message
-                    } else if (inputLine.contains("GET")) {
-                        String[] requestParam = inputLine.split(" ");
-                        String path = requestParam[1];
-                        try (PrintWriter out = new PrintWriter(conn.getOutputStream(), true)) {
-                            File file = new File(path);
-                            if (!file.exists()) {
-                                ResponseMessage respMsg = new ResponseMessage(404);
-                                respMsg.write(os);
-                            }
-                            FileReader fr = new FileReader(file);
-                            try (BufferedReader bfr = new BufferedReader(fr)) {
-                                String line;
-                                while ((line = bfr.readLine()) != null) {
-                                    out.write(line);
-                                }
-                            }
-                            is.close();
-                        } catch (FileNotFoundException fnfe) {
-                            ResponseMessage respMsg = new ResponseMessage(404);
-                            respMsg.write(os);
-                        }
-                    }
+            os.write(("Server is running.\r\n").getBytes());
+            try {
+                RequestMessage reqMsg = RequestMessage.parse(is);
+                if (reqMsg.getMethod().equals("GET")) {
+                    GET(reqMsg.getURI(), os);
+                    ResponseMessage resMsg = new ResponseMessage(200);
+                    os.write(("\r\n" + resMsg.toString()).getBytes());
+                } else {
+                    ResponseMessage resMsg = new ResponseMessage(400);
+                    os.write(("\r\n" + resMsg.toString()).getBytes());
                 }
+            } catch (MessageFormatException mfe) {
+                System.out.println("MFE - RequestHandler.java");
             }
-            conn.close();
+            //conn.close();
         } catch (IOException ioe) {
-            System.out.println("IOE - RequestHandler.java");
+            System.out.println("IOE - RequestHandler.java in handleREquests");
+        }
+    }
+
+    public void GET(String uri, OutputStream os) {
+        path = Paths.get("C:\\Users\\Adam\\Dropbox\\Education\\University\\Networks and Operating Systems\\server", uri);
+        path.toAbsolutePath();
+        try {
+            InputStream fis = Files.newInputStream(path);
+            while (true) {
+                int b = fis.read();
+                if (b == - 1) {
+                    break;
+                }
+                os.write(b);
+            }           
+        } catch (IOException ioe) {
+            System.out.println("IOE - RequestHandler.java in GET");
         }
     }
 
