@@ -39,9 +39,7 @@ public class WebServer {
             System.out.println("Connection accepted.");
             // get the output stream for sending data to the client 
             OutputStream os = conn.getOutputStream();
-            // send a response 
-            ResponseMessage respMsg = new ResponseMessage(200);
-            respMsg.write(os);
+            InputStream is = conn.getInputStream();
             os.write("Server is running.".getBytes());
             try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String inputLine;
@@ -53,15 +51,33 @@ public class WebServer {
                         reqMsg.getURI();
                         // convert to path
                         // does path to file exist?
-                            // yes - does file exist?
-                            // no - create file at location
+                        // yes - does file exist?
+                        // no - create file at location
                         // no - response message
                     } else if (inputLine.contains("GET")) {
+                        String[] requestParam = inputLine.split(" ");
+                        String path = requestParam[1];
+                        PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
+                        File file = new File(path);
+                        if (!file.exist()) {
+                            ResponseMessage respMsg = new ResponseMessage(404);
+                            respMsg.write(os);
+                        }
+                        FileReader fr = new FileReader(file);
+                        BufferedReader bfr = new BufferedReader(fr);
+                        String line;
+                        while ((line = bfr.readLine()) != null) {
+                            out.write(line);
+                        }
+
+                        bfr.close();
+                        is.close();
+                        out.close();
                         // get uri
                         // convert to path
                         // does path to file exist?
-                            // yes - return file to client
-                            // no - reponse message
+                        // yes - return file to client
+                        // no - reponse message
                         // mo - response message
                     }
                 }
