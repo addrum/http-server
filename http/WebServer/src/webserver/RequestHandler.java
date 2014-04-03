@@ -173,8 +173,7 @@ public class RequestHandler extends Thread {
                 file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file4
                 Files.createFile(path);
-                OutputStream fos = Files.newOutputStream(path);
-                createResponse(201);
+                OutputStream fos = Files.newOutputStream(path);                
                 while (true) {
                     int b = is.read();
                     if (b == -1) {
@@ -182,6 +181,7 @@ public class RequestHandler extends Thread {
                     }
                     fos.write(b);
                 }
+                createResponse(201);
                 fos.close();                
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
@@ -214,7 +214,6 @@ public class RequestHandler extends Thread {
                 String contentType = Files.probeContentType(path);
                 int contentLength = is.read();
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-                
                 os.write(("\r\nContent-Type: " + contentType).getBytes());
                 os.write(("\r\nContent-Length: " + contentLength).getBytes());
                 os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
