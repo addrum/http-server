@@ -22,7 +22,7 @@ public class RequestHandler extends Thread {
 
     private final Socket conn;
     private final Thread thread;
-    private final String serverLocation;
+    private final String rootDir;
     private final String version;
     private InputStream is;
     private OutputStream os;
@@ -31,10 +31,10 @@ public class RequestHandler extends Thread {
     private String message;
     private int status;
 
-    public RequestHandler(Socket conn) {
+    public RequestHandler(Socket conn, String rootDir) {
         thread = new Thread();
         this.conn = conn;
-        serverLocation = "." + File.separator + "data" + File.separator + "public" + File.separator;
+        this.rootDir = "." + File.separator + "data" + File.separator + "public" + File.separator;
         message = "";
         version = "HTTP/1.1 ";
         handleRequests();
@@ -95,7 +95,7 @@ public class RequestHandler extends Thread {
     }
 
     public void PUT(String uri, InputStream is) {
-        path = Paths.get(serverLocation, uri);
+        path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         File file = new File(path.toString());
         if (!file.exists()) {
@@ -125,7 +125,7 @@ public class RequestHandler extends Thread {
 
     public void GET(String uri, OutputStream os) {
         // creates an absolute path based on the uri relative to the server location
-        path = Paths.get(serverLocation, uri);
+        path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         System.out.println(path.toString());
         File file = new File(path.toString());
@@ -152,7 +152,7 @@ public class RequestHandler extends Thread {
 
     public void HEAD(String uri, OutputStream os) {
         // creates an absolute path based on the uri relative to the server location
-        path = Paths.get(serverLocation, uri);
+        path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         System.out.println(path.toString());
         File file = new File(path.toString());
