@@ -30,8 +30,6 @@ public class RequestHandler extends Thread {
     private final String rootDir;
     private final String version;
     private static Logger logger;
-    private InputStream is;
-    private OutputStream os;
     private Path path;
     private String uri;
     private String message;
@@ -39,7 +37,6 @@ public class RequestHandler extends Thread {
     private boolean logging;
 
     public RequestHandler(Socket conn, String rootDir, boolean logging) {
-        thread = new Thread();
         this.conn = conn;
         this.rootDir = "." + File.separator + rootDir + File.separator;
         this.logging = logging;
@@ -69,16 +66,16 @@ public class RequestHandler extends Thread {
         }
         message = "";
         version = "HTTP/1.1 ";
-        r();
+        
     }
 
-    //@Override
-    public void r() {
+    @Override
+    public void run() {
         // get the output stream for sending data to the client
         try {
             while (!conn.isClosed()) {
-                os = conn.getOutputStream();
-                is = conn.getInputStream();
+                OutputStream os = conn.getOutputStream();
+                InputStream is = conn.getInputStream();
                 // creates a request message with parses from the input stream
                 try {
                     RequestMessage reqMsg = RequestMessage.parse(is);
@@ -86,31 +83,31 @@ public class RequestHandler extends Thread {
                     uri = reqMsg.getURI();
                     if (reqMsg.getMethod().equals("PUT")) {
                         // calls put method which passes in the created uri and input stream
-                        PUT(uri, is);
+                        PUT(uri, is, os);
                     } if (reqMsg.getMethod().equals("GET")) {
-                        GET(reqMsg, os);
+                        GET(reqMsg, os, is);
                     } if (reqMsg.getMethod().equals("HEAD")) {
                         HEAD(uri, os);
                     }
                 } catch (MessageFormatException mfe) {
-                    createResponse(400);
+                    createResponse(400, os);
                     System.out.println("Incorrect message format.");
                 }
                 conn.close();
             }
         } catch (IOException ioe) {
-            createResponse(500);
+            //createResponse(500, os);
             System.out.println("ioe");
         }
         try {
             thread.join();
         } catch (InterruptedException IE) {
-            createResponse(500);
+            //createResponse(500, os);
             System.out.println("Couldn't join thread.");
         }
     }
 
-    public void PUT(String uri, InputStream is) {
+    public void PUT(String uri, InputStream is, OutputStream os) {
         path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         File file = new File(path.toString());
@@ -126,28 +123,28 @@ public class RequestHandler extends Thread {
                         break;
                     }
                     if (b > 1024 * 1024) {
-                        createResponse(400);
+                        createResponse(400, os);
                         logSomething("PUT", uri, "400");
                     } else if (b <= 1024 * 1024) {
                         fos.write(b);
                     }
                 }
-                createResponse(201);
+                createResponse(201, os);
                 logSomething("PUT", uri, "201");
                 fos.close();
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
-                createResponse(400);
+                createResponse(400, os);
                 logSomething("PUT", uri, "400");
             }
         } else {
-            createResponse(403);
+            createResponse(403, os);
             logSomething("PUT", uri, "403");
         }
     }
 
-    public void POST(String uri, InputStream is) {
+    public void POST(String uri, InputStream is, OutputStream os) {
         path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         File file = new File(path.toString());
@@ -167,21 +164,21 @@ public class RequestHandler extends Thread {
                     }
                     fos.write(b);
                 }
-                createResponse(201);
+                createResponse(201, os);
                 logSomething("POST", uri, "201");
                 fos.close();
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
-                createResponse(400);
+                createResponse(400, os);
                 logSomething("POST", uri, "400");
             }
         } else {
-            createResponse(403);
+            createResponse(403, os);
         }
     }
 
-    public void GET(RequestMessage rq, OutputStream os) {
+    public void GET(RequestMessage rq, OutputStream os, InputStream is) {
         // creates an absolute path based on the uri relative to the server location
         path = Paths.get(rootDir, rq.getURI());
         path.toAbsolutePath();
@@ -193,7 +190,7 @@ public class RequestHandler extends Thread {
                 // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
                 if (rq.getHeaderFieldValue("If-Modified-Since") == null) {
-                    createResponse(200);
+                    createResponse(200, os);
                     logSomething("GET", rq.getURI(), "200");
                     while (true) {
                         int b = fis.read();
@@ -207,7 +204,7 @@ public class RequestHandler extends Thread {
                     Date modifiedDate = new SimpleDateFormat("MM/dd/yyyy").parse(rq.getHeaderFieldValue("If-Modified-Since"));
                     modifiedMili = modifiedDate.getTime();
                     if (modifiedMili <= file.lastModified()) {
-                        createResponse(200);
+                        createResponse(200, os);
                         logSomething("GET", rq.getURI(), "200");
                         while (true) {
                             int b = fis.read();
@@ -217,7 +214,7 @@ public class RequestHandler extends Thread {
                             os.write(b);
                         }
                     } else {
-                        createResponse(304);
+                        createResponse(304, os);
                         logSomething("GET", rq.getURI(), "304");
                     }
                 }
@@ -230,13 +227,13 @@ public class RequestHandler extends Thread {
                 os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
             } catch (ParseException | IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
-                createResponse(400);
+                createResponse(400, os);
                 logSomething("GET", rq.getURI(), "400");
             }
         } else if (!file.exists() && file.isDirectory()) {
             file.listFiles();
         } else {
-            createResponse(404);
+            createResponse(404, os);
             logSomething("GET", rq.getURI(), "404");
         }
     }
@@ -248,16 +245,16 @@ public class RequestHandler extends Thread {
         System.out.println(path.toString());
         File file = new File(path.toString());
         if (file.exists()) {
-            createResponse(200);
+            createResponse(200, os);
             logSomething("HEAD", uri, "200");
         } else {
-            createResponse(404);
+            createResponse(404, os);
             logSomething("HEAD", uri, "404");
         }
     }
 
     // creates response based on the status number parameter
-    public void createResponse(int code) {
+    public void createResponse(int code, OutputStream os) {
         status = code;
         try {
             ResponseMessage resMsg = new ResponseMessage(status);
@@ -275,11 +272,11 @@ public class RequestHandler extends Thread {
 
     // makes the thread sleep based on the time parameter to allow user
     // to read the messages
-    public void sleepThread(int time) {
+    public void sleepThread(int time, OutputStream os) {
         try {
             Thread.sleep(time);
         } catch (InterruptedException ex) {
-            createResponse(500);
+            createResponse(500, os);
             System.out.println("Could not sleep thread properly");
         }
     }
