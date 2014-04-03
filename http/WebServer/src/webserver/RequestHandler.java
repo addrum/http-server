@@ -68,6 +68,7 @@ public class RequestHandler extends Thread {
         }
         message = "";
         version = "HTTP/1.1 ";
+        //handleRequests();
     }
 
     @Override
@@ -265,8 +266,13 @@ public class RequestHandler extends Thread {
             ResponseMessage resMsg = new ResponseMessage(status);
             os.write(("\r\n" + resMsg.toString()).getBytes());
         } catch (IOException ex) {
-            createResponse(500);
-            System.out.println("Could not write response.");
+            try {
+                ResponseMessage resMsg = new ResponseMessage(500);
+                os.write(("\r\n" + resMsg.toString()).getBytes());
+                System.out.println("Could not write response.");
+            } catch (IOException ex1) {
+                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex1);
+            }
         }
     }
 
@@ -296,6 +302,7 @@ public class RequestHandler extends Thread {
         if (thread == null) {
             thread = new Thread(this);
             thread.start();
+            System.out.println(thread.getId());
         }
     }
     
