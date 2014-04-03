@@ -61,7 +61,7 @@ public class RequestHandler extends Thread {
                         // calls get method which passes in the created uri and output stream
                         GET(uri, os);
                         conn.close();
-                        break;                    
+                        break;
                     case "HEAD":
                         // calls head method which passies in the creatrd uri and output stream
                         HEAD(uri, os);
@@ -90,6 +90,7 @@ public class RequestHandler extends Thread {
         try {
             thread.join();
         } catch (InterruptedException IE) {
+            createResponse(500);
             System.out.println("Couldn't join thread.");
         }
     }
@@ -98,7 +99,7 @@ public class RequestHandler extends Thread {
         path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
         File file = new File(path.toString());
-        if (!file.exists()) {
+        if (!file.exists() && !file.isDirectory()) {
             try {
                 file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file
@@ -145,6 +146,8 @@ public class RequestHandler extends Thread {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
             }
+        } else if (!file.exists() && file.isDirectory()) {
+            file.listFiles();
         } else {
             createResponse(404);
         }
@@ -171,6 +174,7 @@ public class RequestHandler extends Thread {
             os.write(("\r\n" + resMsg.toString()).getBytes());
             sleepThread(1000);
         } catch (IOException ex) {
+            createResponse(500);
             System.out.println("Could not write response.");
         }
     }
@@ -181,6 +185,7 @@ public class RequestHandler extends Thread {
         try {
             Thread.sleep(time);
         } catch (InterruptedException ex) {
+            createResponse(500);
             System.out.println("IE - Could not sleep thread properly");
         }
     }
