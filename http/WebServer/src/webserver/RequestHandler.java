@@ -42,17 +42,29 @@ public class RequestHandler extends Thread {
             os = conn.getOutputStream();
             is = conn.getInputStream();
             try {
+                // creates a request message with parses from the input stream
                 RequestMessage reqMsg = RequestMessage.parse(is);
+                // gets the uri from the parsed request message
                 uri = reqMsg.getURI();
-                if (reqMsg.getMethod().equals("GET")) {
-                    GET(uri, os);
-                    createResponse(200);
-                    conn.close();
-                } else if (reqMsg.getMethod().equals("PUT")) {
-                    PUT(uri, is);
-                    createResponse(201);
-                } else {
-                    createResponse(400);
+                switch (reqMsg.getMethod()) {
+                    case "GET":
+                        // calls get method which passes in the created uri and output stream
+                        GET(uri, os);
+                        // calls createResoinse to write the correct response to output stream
+                        createResponse(200);
+                        conn.close();
+                        break;
+                    case "PUT":
+                        // calls put method which passes in the created uri and input stream
+                        PUT(uri, is);
+                        createResponse(201);
+                        conn.close();
+                        break;
+                    default:
+                        // returns bad request response if no cases are met
+                        createResponse(400);
+                        conn.close();
+                        break;
                 }
             } catch (MessageFormatException mfe) {
                 createResponse(500);
@@ -66,12 +78,14 @@ public class RequestHandler extends Thread {
     }
 
     public void GET(String uri, OutputStream os) {
+        // creates an absolute path based on the uri relative to the server location
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         System.out.println(path.toString());
         File file = new File(path.toString());
         if (file.exists()) {
             try {
+                // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
                 while (true) {
                     int b = fis.read();
@@ -92,6 +106,7 @@ public class RequestHandler extends Thread {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         try {
+            // creates a file and writes message body to the file
             Files.createFile(path);
             OutputStream fos = Files.newOutputStream(path);
             while (true) {
