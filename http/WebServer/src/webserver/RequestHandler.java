@@ -112,6 +112,7 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (!file.exists()) {
             try {
+                file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file
                 Files.createFile(path);
                 OutputStream fos = Files.newOutputStream(path);
