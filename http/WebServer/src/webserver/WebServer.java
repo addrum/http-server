@@ -1,18 +1,7 @@
 package webserver;
 
-import in2011.http.RequestMessage;
-import in2011.http.ResponseMessage;
-import in2011.http.StatusCodes;
-import in2011.http.EmptyMessageException;
-import in2011.http.MessageFormatException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.*;
-import java.nio.*;
-import java.util.Date;
-import org.apache.http.client.utils.DateUtils;
-import java.io.*;
 
 public class WebServer {
 
@@ -35,7 +24,7 @@ public class WebServer {
             Socket conn = serverSock.accept();
             System.out.println("Connection accepted."); 
             // create a new client with a new thread
-            RequestHandler client = new RequestHandler(conn);     
+            RequestHandler client = new RequestHandler(conn);  
         }
     }
 

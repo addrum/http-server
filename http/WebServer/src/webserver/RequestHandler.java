@@ -20,12 +20,12 @@ import java.util.logging.Logger;
 
 public class RequestHandler extends Thread {
 
-    private Socket conn;
+    private final Socket conn;
+    private final Thread thread;
+    private final String serverLocation;
     private InputStream is;
     private OutputStream os;
-    private Thread thread;
     private Path path;
-    private String serverLocation;
     private String uri;
 
     public RequestHandler(Socket conn) {
@@ -35,7 +35,7 @@ public class RequestHandler extends Thread {
         handleRequests();
     }
 
-    public void handleRequests() {
+    private void handleRequests() {
         thread.start();
         // get the output stream for sending data to the client 
         try {
@@ -49,15 +49,12 @@ public class RequestHandler extends Thread {
                 switch (reqMsg.getMethod()) {
                     case "GET":
                         // calls get method which passes in the created uri and output stream
-                        GET(uri, os);
-                        // calls createResoinse to write the correct response to output stream
-                        createResponse(200);
+                        GET(uri, os);                    
                         conn.close();
                         break;
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
-                        PUT(uri, is);
-                        createResponse(201);
+                        PUT(uri, is);                       
                         conn.close();
                         break;
                     default:
@@ -69,11 +66,17 @@ public class RequestHandler extends Thread {
             } catch (MessageFormatException mfe) {
                 createResponse(500);
                 System.out.println("MFE - RequestHandler.java");
+                conn.close();
             }
             //conn.close();
         } catch (IOException ioe) {
             createResponse(500);
-            System.out.println("IOE - RequestHandler.java in handleREquests");
+            System.out.println("IOE - RequestHandler.java in handleRequests");
+            try {
+                conn.close();
+            } catch (IOException ex) {
+                System.out.println("IOE - RequestHandler.java in handleRequests");
+            }
         }
     }
 
@@ -97,6 +100,7 @@ public class RequestHandler extends Thread {
             } catch (IOException ioe) {
                 System.out.println("IOE - RequestHandler.java in GET");
             }
+            createResponse(200);          
         } else {
             createResponse(404);
         }
@@ -105,20 +109,26 @@ public class RequestHandler extends Thread {
     public void PUT(String uri, InputStream is) {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
-        try {
-            // creates a file and writes message body to the file
-            Files.createFile(path);
-            OutputStream fos = Files.newOutputStream(path);
-            while (true) {
-                int b = is.read();
-                if (b == -1) {
-                    break;
+        File file = new File(path.toString());
+        if (!file.exists()) {
+            try {
+                // creates a file and writes message body to the file
+                Files.createFile(path);
+                OutputStream fos = Files.newOutputStream(path);
+                while (true) {
+                    int b = is.read();
+                    if (b == -1) {
+                        break;
+                    }
+                    fos.write(b);
                 }
-                fos.write(b);
+                fos.close();
+            } catch (IOException ioe) {
+                System.out.println("IOE - RequestHandler.java in PUT");
             }
-            fos.close();
-        } catch (IOException ioe) {
-            System.out.println("IOE - RequestHandler.java in PUT");
+            createResponse(201);
+        } else {
+            createResponse(400);
         }
     }
 
@@ -158,7 +168,7 @@ public class RequestHandler extends Thread {
         ResponseMessage resMsg = new ResponseMessage(status);
         try {
             os.write(("\r\n" + resMsg.toString()).getBytes());
-            os.write(("\r\n Closing connection in 3 seconds...").getBytes());
+            os.write(("\r\nClosing connection in 3 seconds...").getBytes());
             sleepThread(3000);
         } catch (IOException ex) {
             System.out.println("IOE - Could not write response.");
