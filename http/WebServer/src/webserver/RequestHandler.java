@@ -25,54 +25,53 @@ import java.util.logging.LogRecord;
 public class RequestHandler extends Thread {
 
     private final Socket conn;
-    private final Thread thread;
+    private Thread thread;
     private final String rootDir;
     private final String version;
-    private static Logger logger;     
+    private static Logger logger;
     private InputStream is;
     private OutputStream os;
     private Path path;
     private String uri;
     private String message;
-    private int status;    
+    private int status;
     private boolean logging;
 
     public RequestHandler(Socket conn, String rootDir, boolean logging) {
         thread = new Thread();
         this.conn = conn;
         this.rootDir = "." + File.separator + rootDir + File.separator;
-        this.logging=logging;
-        
-        logger=Logger.getLogger(RequestHandler.class.getName());
-        if(logging){
-        File fileLog = new File(this.rootDir+"webserverIN2011.log");
-            try {                
-                if(!fileLog.exists()){
+        this.logging = logging;
+
+        logger = Logger.getLogger(RequestHandler.class.getName());
+        if (logging) {
+            File fileLog = new File(this.rootDir + "webserverIN2011.log");
+            try {
+                if (!fileLog.exists()) {
                     fileLog.createNewFile();
-                }                
+                }
                 FileHandler logFile = new FileHandler(fileLog.toString(), true);
                 logFile.setFormatter(new Formatter() {
-                    public String format(LogRecord rec){
+                    public String format(LogRecord rec) {
                         StringBuffer buf = new StringBuffer(1000);
                         buf.append(rec.getSequenceNumber());
                         buf.append(":");
-                        buf.append(rec.getMessage());                        
+                        buf.append(rec.getMessage());
                         buf.append("\r\n");
                         return buf.toString();
-                    }                 
+                    }
                 });
-                logger.addHandler(logFile);                
+                logger.addHandler(logFile);
             } catch (IOException | SecurityException ex) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         message = "";
         version = "HTTP/1.1 ";
-        handleRequests();
     }
 
-    private void handleRequests() {
-        thread.start();
+    @Override
+    public void run() {
         // get the output stream for sending data to the client 
         try {
             os = conn.getOutputStream();
@@ -103,12 +102,12 @@ public class RequestHandler extends Thread {
                     default:
                         // returns bad request response if no cases are met
                         createResponse(400);
-                        logSomething(reqMsg.getMethod(),uri,"400");
+                        logSomething(reqMsg.getMethod(), uri, "400");
                         conn.close();
                         break;
                 }
             } catch (MessageFormatException mfe) {
-                createResponse(400);                
+                createResponse(400);
                 System.out.println("Incorrect message format.");
                 conn.close();
             }
@@ -141,7 +140,7 @@ public class RequestHandler extends Thread {
                 file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file4
                 Files.createFile(path);
-                OutputStream fos = Files.newOutputStream(path);                
+                OutputStream fos = Files.newOutputStream(path);
                 while (true) {
                     int b = is.read();
                     if (b == -1) {
@@ -149,23 +148,23 @@ public class RequestHandler extends Thread {
                     }
                     if (b > 1024 * 1024) {
                         createResponse(400);
-                        logSomething("PUT",uri,"400");
+                        logSomething("PUT", uri, "400");
                     } else if (b <= 1024 * 1024) {
                         fos.write(b);
                     }
                 }
                 createResponse(201);
-                logSomething("PUT",uri,"201");
-                fos.close();                
+                logSomething("PUT", uri, "201");
+                fos.close();
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
                 createResponse(400);
-                logSomething("PUT",uri,"400");
+                logSomething("PUT", uri, "400");
             }
         } else {
             createResponse(403);
-            logSomething("PUT",uri,"403");
+            logSomething("PUT", uri, "403");
         }
     }
 
@@ -181,7 +180,7 @@ public class RequestHandler extends Thread {
                 file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file4
                 Files.createFile(path);
-                OutputStream fos = Files.newOutputStream(path);                
+                OutputStream fos = Files.newOutputStream(path);
                 while (true) {
                     int b = is.read();
                     if (b == -1) {
@@ -190,13 +189,13 @@ public class RequestHandler extends Thread {
                     fos.write(b);
                 }
                 createResponse(201);
-                logSomething("POST",uri,"201");
-                fos.close();                
+                logSomething("POST", uri, "201");
+                fos.close();
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
                 createResponse(400);
-                logSomething("POST",uri,"400");
+                logSomething("POST", uri, "400");
             }
         } else {
             createResponse(403);
@@ -217,7 +216,7 @@ public class RequestHandler extends Thread {
                 // response 304
                 // else response 200
                 createResponse(200);
-                logSomething("GET",uri,"200");
+                logSomething("GET", uri, "200");
                 while (true) {
                     int b = fis.read();
                     if (b == -1) {
@@ -234,13 +233,13 @@ public class RequestHandler extends Thread {
             } catch (IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
-                logSomething("GET",uri,"400");
+                logSomething("GET", uri, "400");
             }
         } else if (!file.exists() && file.isDirectory()) {
             file.listFiles();
         } else {
             createResponse(404);
-            logSomething("GET",uri,"404");
+            logSomething("GET", uri, "404");
         }
     }
 
@@ -252,10 +251,10 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (file.exists()) {
             createResponse(200);
-            logSomething("HEAD",uri,"200");
+            logSomething("HEAD", uri, "200");
         } else {
             createResponse(404);
-            logSomething("HEAD",uri,"404");
+            logSomething("HEAD", uri, "404");
         }
     }
 
@@ -280,17 +279,24 @@ public class RequestHandler extends Thread {
             createResponse(500);
             System.out.println("Could not sleep thread properly");
         }
-    }        
+    }
 
-    public void logSomething(String logMethod, String logUri, String logResponse){
-        if(logging){
-        String logRecord=logMethod+":"+logUri+":"+logResponse;
-        logger.log(new LogRecord(Level.INFO,logRecord));
-        
-         for(int i=0;i<logger.getHandlers().length;i++){
-            logger.getHandlers()[i].close();
-         }
+    public void logSomething(String logMethod, String logUri, String logResponse) {
+        if (logging) {
+            String logRecord = logMethod + ":" + logUri + ":" + logResponse;
+            logger.log(new LogRecord(Level.INFO, logRecord));
+            for (int i = 0; i < logger.getHandlers().length; i++) {
+                logger.getHandlers()[i].close();
+            }
         }
     }
+    
+    @Override
+    public void start() {
+        if (thread == null) {
+            thread = new Thread(this);
+            thread.start();
+        }
+    }
+    
 }
-
