@@ -35,7 +35,7 @@ public class RequestHandler extends Thread {
     public RequestHandler(Socket conn, String rootDir) {
         thread = new Thread();
         this.conn = conn;
-        this.rootDir = "." + File.separator + "data" + File.separator + "public" + File.separator;
+        this.rootDir = "." + File.separator + "data" + File.separator;
         message = "";
         version = "HTTP/1.1 ";
         handleRequests();
