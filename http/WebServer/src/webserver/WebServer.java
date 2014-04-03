@@ -24,7 +24,8 @@ public class WebServer {
             Socket conn = serverSock.accept();
             System.out.println("Connection accepted."); 
             // create a new client with a new thread
-            RequestHandler client = new RequestHandler(conn, rootDir, logging);  
+            RequestHandler client = new RequestHandler(conn, rootDir, logging);
+            client.start();
         }
     }
 
