@@ -18,6 +18,7 @@ import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.SimpleDateFormat;
+import java.util.logging.FileHandler;
 
 public class RequestHandler extends Thread {
 
@@ -25,6 +26,7 @@ public class RequestHandler extends Thread {
     private final Thread thread;
     private final String rootDir;
     private final String version;
+    private static Logger logger;              
     private InputStream is;
     private OutputStream os;
     private Path path;
@@ -35,7 +37,18 @@ public class RequestHandler extends Thread {
     public RequestHandler(Socket conn, String rootDir) {
         thread = new Thread();
         this.conn = conn;
-        this.rootDir = "." + File.separator + "data" + File.separator;
+        this.rootDir = "." + File.separator + rootDir + File.separator;
+        
+        logger=Logger.getLogger(RequestHandler.class.getName());
+        File fileLog = new File(this.rootDir+"webserverIN2011.log");
+            try {                
+                if(!fileLog.exists()){
+                    fileLog.createNewFile();
+                }                
+                logger.addHandler(new FileHandler(fileLog.toString()));
+            } catch (IOException | SecurityException ex) {
+                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }               
         message = "";
         version = "HTTP/1.1 ";
         handleRequests();
@@ -73,6 +86,7 @@ public class RequestHandler extends Thread {
                     default:
                         // returns bad request response if no cases are met
                         createResponse(400);
+                        logSomething(reqMsg.getMethod(),uri,"400");
                         conn.close();
                         break;
                 }
@@ -110,7 +124,7 @@ public class RequestHandler extends Thread {
                 file.getParentFile().mkdirs();
                 // creates a file and writes message body to the file4
                 Files.createFile(path);
-                OutputStream fos = Files.newOutputStream(path);
+                OutputStream fos = Files.newOutputStream(path);                
                 while (true) {
                     int b = is.read();
                     if (b == -1) {
@@ -122,8 +136,8 @@ public class RequestHandler extends Thread {
                         fos.write(b);
                     }
                 }
-                fos.close();
                 createResponse(201);
+                fos.close();                
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
@@ -147,6 +161,7 @@ public class RequestHandler extends Thread {
                 // creates a file and writes message body to the file4
                 Files.createFile(path);
                 OutputStream fos = Files.newOutputStream(path);
+                createResponse(201);
                 while (true) {
                     int b = is.read();
                     if (b == -1) {
@@ -154,8 +169,7 @@ public class RequestHandler extends Thread {
                     }
                     fos.write(b);
                 }
-                fos.close();
-                createResponse(201);
+                fos.close();                
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
@@ -176,6 +190,7 @@ public class RequestHandler extends Thread {
             try {
                 // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
+                createResponse(200);
                 while (true) {
                     int b = fis.read();
                     if (b == -1) {
@@ -186,7 +201,7 @@ public class RequestHandler extends Thread {
                 String contentType = Files.probeContentType(path);
                 int contentLength = is.read();
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-                createResponse(200);
+                
                 os.write(("\r\nContent-Type: " + contentType).getBytes());
                 os.write(("\r\nContent-Length: " + contentLength).getBytes());
                 os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
@@ -235,6 +250,13 @@ public class RequestHandler extends Thread {
             createResponse(500);
             System.out.println("Could not sleep thread properly");
         }
-    }
+    }        
 
+    public void logSomething(String logMethod, String logUri, String logResponse){
+        logger.log(Level.INFO,"{0}:{1}:{2}:{3}",new Object[]{1,logMethod,logUri,logResponse});
+        
+         for(int i=0;i<logger.getHandlers().length;i++){
+            logger.getHandlers()[i].close();
+         }
+    }
 }
