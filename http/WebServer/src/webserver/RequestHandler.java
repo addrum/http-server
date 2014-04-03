@@ -203,6 +203,9 @@ public class RequestHandler extends Thread {
             try {
                 // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
+                // if file value.last modified is later than header value
+                // response 304
+                // else response 200
                 createResponse(200);
                 while (true) {
                     int b = fis.read();
