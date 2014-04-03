@@ -17,6 +17,7 @@ import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.SimpleDateFormat;
 
 public class RequestHandler extends Thread {
 
@@ -51,10 +52,11 @@ public class RequestHandler extends Thread {
                 RequestMessage reqMsg = RequestMessage.parse(is);
                 // gets the uri from the parsed request message
                 uri = reqMsg.getURI();
+                String encodedUri = URLEncoder.encode(uri, "UTF-8");
                 switch (reqMsg.getMethod()) {
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
-                        PUT(uri, is);
+                        PUT(encodedUri, is);
                         sleepThread(1000);
                         conn.close();
                         break;
@@ -80,6 +82,8 @@ public class RequestHandler extends Thread {
                 System.out.println("Incorrect message format.");
                 conn.close();
             }
+            os.close();
+            is.close();
         } catch (IOException ioe) {
             createResponse(500);
             System.out.println("Couldn't get streams.");
@@ -105,7 +109,43 @@ public class RequestHandler extends Thread {
         if (!file.exists() && !file.isDirectory()) {
             try {
                 file.getParentFile().mkdirs();
-                // creates a file and writes message body to the file
+                // creates a file and writes message body to the file4
+                Files.createFile(path);
+                OutputStream fos = Files.newOutputStream(path);
+                while (true) {
+                    int b = is.read();
+                    if (b == -1) {
+                        break;
+                    }
+                    if (b > 1024 * 1024) {
+                        createResponse(400);
+                    } else if (b <= 1024 * 1024) {
+                        fos.write(b);
+                    }
+                }
+                fos.close();
+                createResponse(201);
+                System.out.println("HTTP/1.1 201 Created");
+            } catch (IOException ioe) {
+                System.out.println("Couldn't write message body to file.");
+                createResponse(400);
+            }
+        } else {
+            createResponse(403);
+        }
+    }
+
+    public void POST(String uri, InputStream is) {
+        path = Paths.get(rootDir, uri);
+        path.toAbsolutePath();
+        File file = new File(path.toString());
+        if (!file.isDirectory()) {
+            try {
+                if (file.exists()) {
+                    file.delete();
+                }
+                file.getParentFile().mkdirs();
+                // creates a file and writes message body to the file4
                 Files.createFile(path);
                 OutputStream fos = Files.newOutputStream(path);
                 while (true) {
@@ -145,8 +185,12 @@ public class RequestHandler extends Thread {
                     os.write(b);
                 }
                 String contentType = Files.probeContentType(path);
+                int contentLength = is.read();
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
                 createResponse(200);
                 os.write(("\r\nContent-Type: " + contentType).getBytes());
+                os.write(("\r\nContent-Length: " + contentLength).getBytes());
+                os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
             } catch (IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
@@ -164,7 +208,7 @@ public class RequestHandler extends Thread {
         path.toAbsolutePath();
         System.out.println(path.toString());
         File file = new File(path.toString());
-        if (file.exists() && !file.isDirectory()) {
+        if (file.exists()) {
             createResponse(200);
         } else {
             createResponse(404);
@@ -176,7 +220,7 @@ public class RequestHandler extends Thread {
         status = code;
         try {
             ResponseMessage resMsg = new ResponseMessage(status);
-            os.write(("\r\n" + resMsg.toString()).getBytes());            
+            os.write(("\r\n" + resMsg.toString()).getBytes());
         } catch (IOException ex) {
             createResponse(500);
             System.out.println("Could not write response.");
