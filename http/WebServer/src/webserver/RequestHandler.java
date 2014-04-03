@@ -52,16 +52,20 @@ public class RequestHandler extends Thread {
                 // gets the uri from the parsed request message
                 uri = reqMsg.getURI();
                 switch (reqMsg.getMethod()) {
-                    case "GET":
-                        // calls get method which passes in the created uri and output stream
-                        GET(uri, os);
-                        conn.close();
-                        break;
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
                         PUT(uri, is);
                         conn.close();
                         break;
+                    case "GET":
+                        // calls get method which passes in the created uri and output stream
+                        GET(uri, os);
+                        conn.close();
+                        break;                    
+                    case "HEAD":
+                        // calls head method which passies in the creatrd uri and output stream
+                        HEAD(uri, os);
+                        conn.close();
                     default:
                         // returns bad request response if no cases are met
                         createResponse(400);
@@ -87,33 +91,6 @@ public class RequestHandler extends Thread {
             thread.join();
         } catch (InterruptedException IE) {
             System.out.println("Couldn't join thread.");
-        }
-    }
-
-    public void GET(String uri, OutputStream os) {
-        // creates an absolute path based on the uri relative to the server location
-        path = Paths.get(serverLocation, uri);
-        path.toAbsolutePath();
-        System.out.println(path.toString());
-        File file = new File(path.toString());
-        if (file.exists() && !file.isDirectory()) {
-            try {
-                // writes the file body to the output stream
-                InputStream fis = Files.newInputStream(path);
-                while (true) {
-                    int b = fis.read();
-                    if (b == -1) {
-                        break;
-                    }
-                    os.write(b);
-                }
-                createResponse(200);
-            } catch (IOException ioe) {
-                System.out.println("Couldn't write file to output stream.");
-                createResponse(400);
-            }          
-        } else {
-            createResponse(404);
         }
     }
 
@@ -146,9 +123,49 @@ public class RequestHandler extends Thread {
         }
     }
 
+    public void GET(String uri, OutputStream os) {
+        // creates an absolute path based on the uri relative to the server location
+        path = Paths.get(serverLocation, uri);
+        path.toAbsolutePath();
+        System.out.println(path.toString());
+        File file = new File(path.toString());
+        if (file.exists() && !file.isDirectory()) {
+            try {
+                // writes the file body to the output stream
+                InputStream fis = Files.newInputStream(path);
+                while (true) {
+                    int b = fis.read();
+                    if (b == -1) {
+                        break;
+                    }
+                    os.write(b);
+                }
+                createResponse(200);
+            } catch (IOException ioe) {
+                System.out.println("Couldn't write file to output stream.");
+                createResponse(400);
+            }
+        } else {
+            createResponse(404);
+        }
+    }
+
+    public void HEAD(String uri, OutputStream os) {
+        // creates an absolute path based on the uri relative to the server location
+        path = Paths.get(serverLocation, uri);
+        path.toAbsolutePath();
+        System.out.println(path.toString());
+        File file = new File(path.toString());
+        if (file.exists() && !file.isDirectory()) {
+            createResponse(200);
+        } else {
+            createResponse(404);
+        }
+    }
+
     // creates response based on the status number parameter
     public void createResponse(int code) {
-        status = code;     
+        status = code;
         try {
             ResponseMessage resMsg = new ResponseMessage(status);
             os.write(("\r\n" + resMsg.toString()).getBytes());
@@ -157,7 +174,8 @@ public class RequestHandler extends Thread {
             System.out.println("Could not write response.");
         }
     }
-        // makes the thread sleep based on the time parameter to allow user
+
+    // makes the thread sleep based on the time parameter to allow user
     // to read the messages
     public void sleepThread(int time) {
         try {
