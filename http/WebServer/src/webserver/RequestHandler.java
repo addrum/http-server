@@ -69,61 +69,38 @@ public class RequestHandler extends Thread {
         }
         message = "";
         version = "HTTP/1.1 ";
-        //handleRequests();
+        r();
     }
 
-    @Override
-    public void run() {
-        // get the output stream for sending data to the client 
+    //@Override
+    public void r() {
+        // get the output stream for sending data to the client
         try {
-            os = conn.getOutputStream();
-            is = conn.getInputStream();
-            try {
+            while (!conn.isClosed()) {
+                os = conn.getOutputStream();
+                is = conn.getInputStream();
                 // creates a request message with parses from the input stream
-                RequestMessage reqMsg = RequestMessage.parse(is);
-                // gets the uri from the parsed request message
-                uri = reqMsg.getURI();
-                switch (reqMsg.getMethod()) {
-                    case "PUT":
+                try {
+                    RequestMessage reqMsg = RequestMessage.parse(is);
+                    // gets the uri from the parsed request message
+                    uri = reqMsg.getURI();
+                    if (reqMsg.getMethod().equals("PUT")) {
                         // calls put method which passes in the created uri and input stream
                         PUT(uri, is);
-                        sleepThread(1000);
-                        conn.close();
-                        break;
-                    case "GET":
-                        // calls get method which passes in the created uri and output stream                        
+                    } if (reqMsg.getMethod().equals("GET")) {
                         GET(reqMsg, os);
-                        sleepThread(1000);
-                        conn.close();
-                        break;
-                    case "HEAD":
-                        // calls head method which passies in the creatrd uri and output stream
+                    } if (reqMsg.getMethod().equals("HEAD")) {
                         HEAD(uri, os);
-                        sleepThread(1000);
-                        conn.close();
-                    default:
-                        // returns bad request response if no cases are met
-                        createResponse(400);
-                        logSomething(reqMsg.getMethod(), uri, "400");
-                        conn.close();
-                        break;
+                    }
+                } catch (MessageFormatException mfe) {
+                    createResponse(400);
+                    System.out.println("Incorrect message format.");
                 }
-            } catch (MessageFormatException mfe) {
-                createResponse(400);
-                System.out.println("Incorrect message format.");
                 conn.close();
             }
-            os.close();
-            is.close();
         } catch (IOException ioe) {
             createResponse(500);
-            System.out.println("Couldn't get streams.");
-            try {
-                conn.close();
-            } catch (IOException ex) {
-                createResponse(500);
-                System.out.println("Couldn't close connection.");
-            }
+            System.out.println("ioe");
         }
         try {
             thread.join();

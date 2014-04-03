@@ -21,8 +21,7 @@ public class WebServer {
         System.out.println("Server socket created. Port open: " + port);
         while (true) {
             // listen for a new connection on the server socket 
-            Socket conn = serverSock.accept();
-            
+            Socket conn = serverSock.accept();  
             // create a new client with a new thread
             RequestHandler client = new RequestHandler(conn, rootDir, logging);
             client.start();
