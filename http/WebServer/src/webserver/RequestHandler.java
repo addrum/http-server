@@ -55,16 +55,19 @@ public class RequestHandler extends Thread {
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
                         PUT(uri, is);
+                        sleepThread(1000);
                         conn.close();
                         break;
                     case "GET":
                         // calls get method which passes in the created uri and output stream
                         GET(uri, os);
+                        sleepThread(1000);
                         conn.close();
                         break;
                     case "HEAD":
                         // calls head method which passies in the creatrd uri and output stream
                         HEAD(uri, os);
+                        sleepThread(1000);
                         conn.close();
                     default:
                         // returns bad request response if no cases are met
@@ -141,7 +144,9 @@ public class RequestHandler extends Thread {
                     }
                     os.write(b);
                 }
+                String contentType = Files.probeContentType(path);
                 createResponse(200);
+                os.write(("\r\nContent-Type: " + contentType).getBytes());
             } catch (IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
@@ -171,8 +176,7 @@ public class RequestHandler extends Thread {
         status = code;
         try {
             ResponseMessage resMsg = new ResponseMessage(status);
-            os.write(("\r\n" + resMsg.toString()).getBytes());
-            sleepThread(1000);
+            os.write(("\r\n" + resMsg.toString()).getBytes());            
         } catch (IOException ex) {
             createResponse(500);
             System.out.println("Could not write response.");
@@ -186,7 +190,7 @@ public class RequestHandler extends Thread {
             Thread.sleep(time);
         } catch (InterruptedException ex) {
             createResponse(500);
-            System.out.println("IE - Could not sleep thread properly");
+            System.out.println("Could not sleep thread properly");
         }
     }
 
