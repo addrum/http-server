@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.SimpleDateFormat;
 import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
 
 public class RequestHandler extends Thread {
 
@@ -45,7 +46,7 @@ public class RequestHandler extends Thread {
                 if(!fileLog.exists()){
                     fileLog.createNewFile();
                 }                
-                logger.addHandler(new FileHandler(fileLog.toString()));
+                logger.addHandler(new FileHandler(fileLog.toString(), true));                
             } catch (IOException | SecurityException ex) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
             }               
@@ -260,3 +261,4 @@ public class RequestHandler extends Thread {
          }
     }
 }
+
