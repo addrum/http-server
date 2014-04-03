@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import java.text.SimpleDateFormat;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
 
 public class RequestHandler extends Thread {
 
@@ -27,13 +28,13 @@ public class RequestHandler extends Thread {
     private final Thread thread;
     private final String rootDir;
     private final String version;
-    private static Logger logger;              
+    private static Logger logger;     
     private InputStream is;
     private OutputStream os;
     private Path path;
     private String uri;
     private String message;
-    private int status;
+    private int status;    
 
     public RequestHandler(Socket conn, String rootDir) {
         thread = new Thread();
@@ -46,7 +47,18 @@ public class RequestHandler extends Thread {
                 if(!fileLog.exists()){
                     fileLog.createNewFile();
                 }                
-                logger.addHandler(new FileHandler(fileLog.toString(), true));                
+                FileHandler logFile = new FileHandler(fileLog.toString(), true);
+                logFile.setFormatter(new Formatter() {
+                    public String format(LogRecord rec){
+                        StringBuffer buf = new StringBuffer(1000);
+                        buf.append(rec.getSequenceNumber());
+                        buf.append(":");
+                        buf.append(rec.getMessage());                        
+                        buf.append("\r\n");
+                        return buf.toString();
+                    }                 
+                });
+                logger.addHandler(logFile);                
             } catch (IOException | SecurityException ex) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
             }               
@@ -254,7 +266,9 @@ public class RequestHandler extends Thread {
     }        
 
     public void logSomething(String logMethod, String logUri, String logResponse){
-        logger.log(Level.INFO,"{0}:{1}:{2}:{3}",new Object[]{1,logMethod,logUri,logResponse});
+        //logger.log(Level.INFO,"{0}:{1}:{2}:{3}",new Object[]{1,logMethod,logUri,logResponse});
+        String logRecord=logMethod+":"+logUri+":"+logResponse;
+        logger.log(new LogRecord(Level.INFO,logRecord));
         
          for(int i=0;i<logger.getHandlers().length;i++){
             logger.getHandlers()[i].close();
