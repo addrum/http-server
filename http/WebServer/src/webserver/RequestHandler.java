@@ -35,13 +35,16 @@ public class RequestHandler extends Thread {
     private String uri;
     private String message;
     private int status;    
+    private boolean logging;
 
-    public RequestHandler(Socket conn, String rootDir) {
+    public RequestHandler(Socket conn, String rootDir, boolean logging) {
         thread = new Thread();
         this.conn = conn;
         this.rootDir = "." + File.separator + rootDir + File.separator;
+        this.logging=logging;
         
         logger=Logger.getLogger(RequestHandler.class.getName());
+        if(logging){
         File fileLog = new File(this.rootDir+"webserverIN2011.log");
             try {                
                 if(!fileLog.exists()){
@@ -61,7 +64,8 @@ public class RequestHandler extends Thread {
                 logger.addHandler(logFile);                
             } catch (IOException | SecurityException ex) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }               
+            }
+        }
         message = "";
         version = "HTTP/1.1 ";
         handleRequests();
@@ -276,13 +280,14 @@ public class RequestHandler extends Thread {
     }        
 
     public void logSomething(String logMethod, String logUri, String logResponse){
-        //logger.log(Level.INFO,"{0}:{1}:{2}:{3}",new Object[]{1,logMethod,logUri,logResponse});
+        if(logging){
         String logRecord=logMethod+":"+logUri+":"+logResponse;
         logger.log(new LogRecord(Level.INFO,logRecord));
         
          for(int i=0;i<logger.getHandlers().length;i++){
             logger.getHandlers()[i].close();
          }
+        }
     }
 }
 
