@@ -46,20 +46,21 @@ public class RequestHandler extends Thread {
                 uri = reqMsg.getURI();
                 if (reqMsg.getMethod().equals("GET")) {
                     GET(uri, os);
-                    ResponseMessage resMsg = new ResponseMessage(200);
-                    os.write(("\r\n" + resMsg.toString()).getBytes());
+                    createResponse(200);
+                    conn.close();
                 } else if (reqMsg.getMethod().equals("PUT")) {
                     PUT(uri, is);
-                    ResponseMessage resMsg = new ResponseMessage(201);
+                    createResponse(201);
                 } else {
-                    ResponseMessage resMsg = new ResponseMessage(400);
-                    os.write(("\r\n" + resMsg.toString()).getBytes());
+                    createResponse(400);
                 }
             } catch (MessageFormatException mfe) {
+                createResponse(500);
                 System.out.println("MFE - RequestHandler.java");
             }
             //conn.close();
         } catch (IOException ioe) {
+            createResponse(500);
             System.out.println("IOE - RequestHandler.java in handleREquests");
         }
     }
@@ -68,17 +69,22 @@ public class RequestHandler extends Thread {
         path = Paths.get(serverLocation, uri);
         path.toAbsolutePath();
         System.out.println(path.toString());
-        try {
-            InputStream fis = Files.newInputStream(path);
-            while (true) {
-                int b = fis.read();
-                if (b == -1) {
-                    break;
+        File file = new File(path.toString());
+        if (file.exists()) {
+            try {
+                InputStream fis = Files.newInputStream(path);
+                while (true) {
+                    int b = fis.read();
+                    if (b == -1) {
+                        break;
+                    }
+                    os.write(b);
                 }
-                os.write(b);
+            } catch (IOException ioe) {
+                System.out.println("IOE - RequestHandler.java in GET");
             }
-        } catch (IOException ioe) {
-            System.out.println("IOE - RequestHandler.java in GET");
+        } else {
+            createResponse(404);
         }
     }
 
@@ -90,12 +96,67 @@ public class RequestHandler extends Thread {
             OutputStream fos = Files.newOutputStream(path);
             while (true) {
                 int b = is.read();
-                if (b == -1) break;
+                if (b == -1) {
+                    break;
+                }
                 fos.write(b);
             }
             fos.close();
         } catch (IOException ioe) {
             System.out.println("IOE - RequestHandler.java in PUT");
+        }
+    }
+
+    // creates response based on the status number parameter
+    public void createResponse(int status) {
+        String message = "";
+        String version = "HTTP/1.1 ";
+        switch (status) {
+            case 1:
+                status = 200;
+                message = "OK";
+            case 2:
+                status = 201;
+                message = "Created";
+            case 3:
+                status = 304;
+                message = "Not Modified";
+            case 4:
+                status = 400;
+                message = "Bad Request";
+            case 5:
+                status = 403;
+                message = "Forbidden";
+            case 6:
+                status = 404;
+                message = "Not Found";
+            case 7:
+                status = 500;
+                message = "Internal Server Error";
+            case 8:
+                status = 501;
+                message = "Not Implemented";
+            case 9:
+                status = 505;
+                message = "HTTP Version Not Supported";
+        }
+        ResponseMessage resMsg = new ResponseMessage(status);
+        try {
+            os.write(("\r\n" + resMsg.toString()).getBytes());
+            os.write(("\r\n Closing connection in 3 seconds...").getBytes());
+            sleepThread(3000);
+        } catch (IOException ex) {
+            System.out.println("IOE - Could not write response.");
+        }
+    }
+
+    // makes the thread sleep based on the time parameter to allow user
+    // to read the messages
+    public void sleepThread(int time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException ex) {
+            System.out.println("IE - Could not sleep thread properly");
         }
     }
 

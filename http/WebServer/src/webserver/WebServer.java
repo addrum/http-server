@@ -30,13 +30,11 @@ public class WebServer {
         // create a server socket 
         ServerSocket serverSock = new ServerSocket(port);
         System.out.println("Server socket created. Port open: " + port);
-        // The java URL connection to the resource
-        URL url = new URL("http://localhost:1091");
-        System.out.println("\n* URL: " + url);
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
             System.out.println("Connection accepted."); 
+            // create a new client with a new thread
             RequestHandler client = new RequestHandler(conn);     
         }
     }
