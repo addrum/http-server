@@ -52,11 +52,10 @@ public class RequestHandler extends Thread {
                 RequestMessage reqMsg = RequestMessage.parse(is);
                 // gets the uri from the parsed request message
                 uri = reqMsg.getURI();
-                String encodedUri = URLEncoder.encode(uri, "UTF-8");
                 switch (reqMsg.getMethod()) {
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
-                        PUT(encodedUri, is);
+                        PUT(uri, is);
                         sleepThread(1000);
                         conn.close();
                         break;
