@@ -136,6 +136,7 @@ public class RequestHandler extends Thread {
                 }
                 fos.close();
                 createResponse(201);
+                System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
                 createResponse(400);
@@ -151,8 +152,7 @@ public class RequestHandler extends Thread {
         try {
             ResponseMessage resMsg = new ResponseMessage(status);
             os.write(("\r\n" + resMsg.toString()).getBytes());
-            os.write(("\r\nClosing connection in 3 seconds...").getBytes());
-            sleepThread(3000);
+            sleepThread(1000);
         } catch (IOException ex) {
             System.out.println("Could not write response.");
         }
