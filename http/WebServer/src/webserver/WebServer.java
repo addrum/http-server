@@ -22,10 +22,11 @@ public class WebServer {
         while (true) {
             // listen for a new connection on the server socket 
             Socket conn = serverSock.accept();
-            System.out.println("Connection accepted."); 
+            
             // create a new client with a new thread
             RequestHandler client = new RequestHandler(conn, rootDir, logging);
             client.start();
+            System.out.println("Connection accepted."); 
         }
     }
 
