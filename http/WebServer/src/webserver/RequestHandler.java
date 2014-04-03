@@ -104,7 +104,7 @@ public class RequestHandler extends Thread {
                         break;
                 }
             } catch (MessageFormatException mfe) {
-                createResponse(400);
+                createResponse(400);                
                 System.out.println("Incorrect message format.");
                 conn.close();
             }
@@ -145,19 +145,23 @@ public class RequestHandler extends Thread {
                     }
                     if (b > 1024 * 1024) {
                         createResponse(400);
+                        logSomething("PUT",uri,"400");
                     } else if (b <= 1024 * 1024) {
                         fos.write(b);
                     }
                 }
                 createResponse(201);
+                logSomething("PUT",uri,"201");
                 fos.close();                
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
                 createResponse(400);
+                logSomething("PUT",uri,"400");
             }
         } else {
             createResponse(403);
+            logSomething("PUT",uri,"403");
         }
     }
 
@@ -182,11 +186,13 @@ public class RequestHandler extends Thread {
                     fos.write(b);
                 }
                 createResponse(201);
+                logSomething("POST",uri,"201");
                 fos.close();                
                 System.out.println("HTTP/1.1 201 Created");
             } catch (IOException ioe) {
                 System.out.println("Couldn't write message body to file.");
                 createResponse(400);
+                logSomething("POST",uri,"400");
             }
         } else {
             createResponse(403);
@@ -204,6 +210,7 @@ public class RequestHandler extends Thread {
                 // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
                 createResponse(200);
+                logSomething("GET",uri,"200");
                 while (true) {
                     int b = fis.read();
                     if (b == -1) {
@@ -220,11 +227,13 @@ public class RequestHandler extends Thread {
             } catch (IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
+                logSomething("GET",uri,"400");
             }
         } else if (!file.exists() && file.isDirectory()) {
             file.listFiles();
         } else {
             createResponse(404);
+            logSomething("GET",uri,"404");
         }
     }
 
@@ -236,8 +245,10 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (file.exists()) {
             createResponse(200);
+            logSomething("HEAD",uri,"200");
         } else {
             createResponse(404);
+            logSomething("HEAD",uri,"404");
         }
     }
 
