@@ -15,6 +15,7 @@ import java.util.Date;
 import org.apache.http.client.utils.DateUtils;
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.SimpleDateFormat;
@@ -79,7 +80,7 @@ public class RequestHandler extends Thread {
             is = conn.getInputStream();
             try {
                 // creates a request message with parses from the input stream
-                RequestMessage reqMsg = RequestMessage.parse(is);
+                RequestMessage reqMsg = RequestMessage.parse(is);                
                 // gets the uri from the parsed request message
                 uri = reqMsg.getURI();
                 switch (reqMsg.getMethod()) {
@@ -90,8 +91,8 @@ public class RequestHandler extends Thread {
                         conn.close();
                         break;
                     case "GET":
-                        // calls get method which passes in the created uri and output stream
-                        GET(uri, os);
+                        // calls get method which passes in the created uri and output stream                        
+                        GET(reqMsg, os);
                         sleepThread(1000);
                         conn.close();
                         break;
@@ -203,41 +204,62 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void GET(String uri, OutputStream os) {
+    public void GET(RequestMessage rq, OutputStream os) {
         // creates an absolute path based on the uri relative to the server location
-        path = Paths.get(rootDir, uri);
+        path = Paths.get(rootDir, rq.getURI());
         path.toAbsolutePath();
         System.out.println(path.toString());
         File file = new File(path.toString());
         if (file.exists() && !file.isDirectory()) {
             try {
+                
                 // writes the file body to the output stream
-                InputStream fis = Files.newInputStream(path);
-                createResponse(200);
-                logSomething("GET",uri,"200");
-                while (true) {
+                InputStream fis = Files.newInputStream(path);    
+                if(rq.getHeaderFieldValue("If-Modified-Since") == null){
+                    createResponse(200);
+                    logSomething("GET",rq.getURI(),"200");
+                    while (true) {
+                    int b = fis.read();
+                    if (b == -1) {
+                        break;
+                    }
+                    os.write(b);                    
+                }}else{
+                long modifiedMili;                
+                Date modifiedDate = new SimpleDateFormat("MM/dd/yyyy").parse(rq.getHeaderFieldValue("If-Modified-Since"));                    
+                modifiedMili=modifiedDate.getTime();                          
+                if(modifiedMili<=file.lastModified()){                    
+                    createResponse(200);
+                    logSomething("GET",rq.getURI(),"200");
+                    while (true) {
                     int b = fis.read();
                     if (b == -1) {
                         break;
                     }
                     os.write(b);
                 }
+                }else{                    
+                    createResponse(304);
+                    logSomething("GET",rq.getURI(),"304");
+                }    
+                }
+                
                 String contentType = Files.probeContentType(path);
                 int contentLength = is.read();
-                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
                 os.write(("\r\nContent-Type: " + contentType).getBytes());
                 os.write(("\r\nContent-Length: " + contentLength).getBytes());
                 os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
-            } catch (IOException ioe) {
+            } catch (ParseException|IOException ioe) {
                 System.out.println("Couldn't write file to output stream.");
                 createResponse(400);
-                logSomething("GET",uri,"400");
+                logSomething("GET",rq.getURI(),"400");
             }
         } else if (!file.exists() && file.isDirectory()) {
             file.listFiles();
         } else {
             createResponse(404);
-            logSomething("GET",uri,"404");
+            logSomething("GET",rq.getURI(),"404");
         }
     }
 
