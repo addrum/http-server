@@ -49,12 +49,12 @@ public class RequestHandler extends Thread {
                 switch (reqMsg.getMethod()) {
                     case "GET":
                         // calls get method which passes in the created uri and output stream
-                        GET(uri, os);                    
+                        GET(uri, os);
                         conn.close();
                         break;
                     case "PUT":
                         // calls put method which passes in the created uri and input stream
-                        PUT(uri, is);                       
+                        PUT(uri, is);
                         conn.close();
                         break;
                     default:
@@ -97,10 +97,10 @@ public class RequestHandler extends Thread {
                     }
                     os.write(b);
                 }
+                createResponse(201);
             } catch (IOException ioe) {
                 System.out.println("IOE - RequestHandler.java in GET");
             }
-            createResponse(200);          
         } else {
             createResponse(404);
         }
@@ -123,10 +123,10 @@ public class RequestHandler extends Thread {
                     fos.write(b);
                 }
                 fos.close();
+                createResponse(201);
             } catch (IOException ioe) {
                 System.out.println("IOE - RequestHandler.java in PUT");
             }
-            createResponse(201);
         } else {
             createResponse(400);
         }
