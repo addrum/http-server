@@ -82,7 +82,6 @@ public class RequestHandler extends Thread {
                     // gets the uri from the parsed request message
                     uri = reqMsg.getURI();
                     if (reqMsg.getMethod().equals("PUT")) {
-                        // calls put method which passes in the created uri and input stream
                         PUT(uri, is, os);
                     }
                     if (reqMsg.getMethod().equals("GET")) {
@@ -283,17 +282,6 @@ public class RequestHandler extends Thread {
             } catch (IOException ex1) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex1);
             }
-        }
-    }
-
-    // makes the thread sleep based on the time parameter to allow user
-    // to read the messages
-    public void sleepThread(int time, OutputStream os) {
-        try {
-            Thread.sleep(time);
-        } catch (InterruptedException ex) {
-            createResponse(500, os);
-            System.out.println("Could not sleep thread properly");
         }
     }
 
