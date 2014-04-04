@@ -48,6 +48,11 @@ public class RequestHandler extends Thread {
                 if (!fileLog.exists()) {
                     fileLog.createNewFile();
                 }
+                else{
+                    fileLog.renameTo(new File(this.rootDir+"webserverIN2011-"+new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()).toString()+".log.backup"));
+                    fileLog = new File(this.rootDir+"webserverIN2011.log");   
+                    fileLog.createNewFile();
+                }
                 FileHandler logFile = new FileHandler(fileLog.toString(), true);
                 logFile.setFormatter(new Formatter() {
                     public String format(LogRecord rec) {
