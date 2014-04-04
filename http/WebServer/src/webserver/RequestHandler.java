@@ -89,7 +89,7 @@ public class RequestHandler extends Thread {
                         GET(reqMsg, os, is);
                     }
                     if (reqMsg.getMethod().equals("HEAD")) {
-                        HEAD(uri, os);
+                        HEAD(uri, os, is);
                     }
                 } catch (MessageFormatException mfe) {
                     createResponse(400, os);
@@ -242,7 +242,7 @@ public class RequestHandler extends Thread {
     public void writeGetResponse(Path path, InputStream is, OutputStream os, File file) {
         try {
             String contentType = Files.probeContentType(path);
-            int contentLength = is.read();
+            long contentLength = file.length();
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
             os.write(("\r\nContent-Type: " + contentType).getBytes());
             os.write(("\r\nContent-Length: " + contentLength).getBytes());
@@ -253,7 +253,7 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void HEAD(String uri, OutputStream os) {
+    public void HEAD(String uri, OutputStream os, InputStream is) {
         // creates an absolute path based on the uri relative to the server location
         path = Paths.get(rootDir, uri);
         path.toAbsolutePath();
@@ -261,9 +261,10 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (file.exists()) {
             createResponse(200, os);
+            writeGetResponse(path, is, os, file);
             logSomething("HEAD", uri, "200");
         } else {
-            createResponse(404, os);
+            createResponse(404, os);            
             logSomething("HEAD", uri, "404");
         }
     }
