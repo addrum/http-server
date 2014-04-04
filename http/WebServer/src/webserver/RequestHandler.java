@@ -192,6 +192,7 @@ public class RequestHandler extends Thread {
                 InputStream fis = Files.newInputStream(path);
                 if (rq.getHeaderFieldValue("If-Modified-Since") == null) {
                     createResponse(200, os);
+                    writeGetResponse(path, is, os, file);
                     logSomething("GET", rq.getURI(), "200");
                     while (true) {
                         int b = fis.read();
@@ -208,6 +209,7 @@ public class RequestHandler extends Thread {
                     modifiedMili = modifiedDate.getTime();
                     if (modifiedMili <= file.lastModified()) {
                         createResponse(200, os);
+                        writeGetResponse(path, is, os, file);
                         logSomething("GET", rq.getURI(), "200");
                         while (true) {
                             int b = fis.read();
@@ -218,16 +220,10 @@ public class RequestHandler extends Thread {
                         }
                     } else {
                         createResponse(304, os);
+                        writeGetResponse(path, is, os, file);
                         logSomething("GET", rq.getURI(), "304");
                     }
-                }
-
-                String contentType = Files.probeContentType(path);
-                int contentLength = is.read();
-                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-                os.write(("\r\nContent-Type: " + contentType).getBytes());
-                os.write(("\r\nContent-Length: " + contentLength).getBytes());
-                os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
+                }              
             } catch (IOException ioe) {
                 createResponse(500, os);
                 logSomething("GET", rq.getURI(), "500");
@@ -240,6 +236,20 @@ public class RequestHandler extends Thread {
         } else {
             createResponse(404, os);
             logSomething("GET", rq.getURI(), "404");
+        }
+    }
+
+    public void writeGetResponse(Path path, InputStream is, OutputStream os, File file) {
+        try {
+            String contentType = Files.probeContentType(path);
+            int contentLength = is.read();
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+            os.write(("\r\nContent-Type: " + contentType).getBytes());
+            os.write(("\r\nContent-Length: " + contentLength).getBytes());
+            os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString() + "\r\n").getBytes());
+        } catch (IOException ex) {
+            createResponse(500, os);
+            System.out.println("Couldn't write get response.");
         }
     }
 
