@@ -66,7 +66,7 @@ public class RequestHandler extends Thread {
         }
         message = "";
         version = "HTTP/1.1 ";
-        
+
     }
 
     @Override
@@ -84,9 +84,11 @@ public class RequestHandler extends Thread {
                     if (reqMsg.getMethod().equals("PUT")) {
                         // calls put method which passes in the created uri and input stream
                         PUT(uri, is, os);
-                    } if (reqMsg.getMethod().equals("GET")) {
+                    }
+                    if (reqMsg.getMethod().equals("GET")) {
                         GET(reqMsg, os, is);
-                    } if (reqMsg.getMethod().equals("HEAD")) {
+                    }
+                    if (reqMsg.getMethod().equals("HEAD")) {
                         HEAD(uri, os);
                     }
                 } catch (MessageFormatException mfe) {
@@ -186,7 +188,6 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (file.exists() && !file.isDirectory()) {
             try {
-
                 // writes the file body to the output stream
                 InputStream fis = Files.newInputStream(path);
                 if (rq.getHeaderFieldValue("If-Modified-Since") == null) {
@@ -200,6 +201,8 @@ public class RequestHandler extends Thread {
                         os.write(b);
                     }
                 } else {
+                    // compares header value if-modified-since to the file's
+                    // last modified date and returns appropriate response
                     long modifiedMili;
                     Date modifiedDate = new SimpleDateFormat("MM/dd/yyyy").parse(rq.getHeaderFieldValue("If-Modified-Since"));
                     modifiedMili = modifiedDate.getTime();
@@ -225,13 +228,15 @@ public class RequestHandler extends Thread {
                 os.write(("\r\nContent-Type: " + contentType).getBytes());
                 os.write(("\r\nContent-Length: " + contentLength).getBytes());
                 os.write(("\r\nLast Modified: " + sdf.format(file.lastModified()).toString()).getBytes());
-            } catch (ParseException | IOException ioe) {
+            } catch (IOException ioe) {
+                createResponse(500, os);
+                logSomething("GET", rq.getURI(), "500");
                 System.out.println("Couldn't write file to output stream.");
-                createResponse(400, os);
-                logSomething("GET", rq.getURI(), "400");
+            } catch (ParseException ex) {
+                createResponse(500, os);
+                logSomething("GET", rq.getURI(), "500");
+                System.out.println("Couldn't parse date.");
             }
-        } else if (!file.exists() && file.isDirectory()) {
-            file.listFiles();
         } else {
             createResponse(404, os);
             logSomething("GET", rq.getURI(), "404");
