@@ -89,6 +89,9 @@ public class RequestHandler extends Thread {
                     if (reqMsg.getMethod().equals("PUT")) {
                         PUT(uri, is, os);
                     }
+                    if (reqMsg.getMethod().equals("POST")) {
+                        POST(uri, is, os);
+                    }
                     if (reqMsg.getMethod().equals("GET")) {
                         GET(reqMsg, os, is);
                     }
@@ -144,6 +147,13 @@ public class RequestHandler extends Thread {
                 createResponse(400, os);
                 logSomething("PUT", uri, "400");
             }
+        } else if (file.isDirectory()){
+            try {
+                Files.createDirectories(path);
+            } catch (IOException ex) {
+                System.out.println("Couldn't create directory.");
+                createResponse(500, os);
+            }
         } else {
             createResponse(403, os);
             logSomething("PUT", uri, "403");
@@ -196,7 +206,7 @@ public class RequestHandler extends Thread {
                 InputStream fis = Files.newInputStream(path);
                 if (rq.getHeaderFieldValue("If-Modified-Since") == null) {
                     createResponse(200, os);
-                    writeGetResponse(path, is, os, file);
+                    writeHeaderResponse(path, is, os, file);
                     logSomething("GET", rq.getURI(), "200");
                     while (true) {
                         int b = fis.read();
@@ -213,7 +223,7 @@ public class RequestHandler extends Thread {
                     modifiedMili = modifiedDate.getTime();
                     if (modifiedMili <= file.lastModified()) {
                         createResponse(200, os);
-                        writeGetResponse(path, is, os, file);
+                        writeHeaderResponse(path, is, os, file);
                         logSomething("GET", rq.getURI(), "200");
                         while (true) {
                             int b = fis.read();
@@ -224,7 +234,7 @@ public class RequestHandler extends Thread {
                         }
                     } else {
                         createResponse(304, os);
-                        writeGetResponse(path, is, os, file);
+                        writeHeaderResponse(path, is, os, file);
                         logSomething("GET", rq.getURI(), "304");
                     }
                 }              
@@ -243,7 +253,8 @@ public class RequestHandler extends Thread {
         }
     }
 
-    public void writeGetResponse(Path path, InputStream is, OutputStream os, File file) {
+    // allows GET and HEAD to response with Header Fields : Values
+    public void writeHeaderResponse(Path path, InputStream is, OutputStream os, File file) {
         try {
             String contentType = Files.probeContentType(path);
             long contentLength = file.length();
@@ -265,7 +276,7 @@ public class RequestHandler extends Thread {
         File file = new File(path.toString());
         if (file.exists()) {
             createResponse(200, os);
-            writeGetResponse(path, is, os, file);
+            writeHeaderResponse(path, is, os, file);
             logSomething("HEAD", uri, "200");
         } else {
             createResponse(404, os);            
